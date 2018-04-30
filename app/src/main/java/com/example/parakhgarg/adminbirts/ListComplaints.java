@@ -4,14 +4,13 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -27,54 +26,47 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HomePage extends AppCompatActivity {
-
-//    @Override
-//    protected void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_home_page);
-//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
-//
-////        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-////        fab.setOnClickListener(new View.OnClickListener() {
-////            @Override
-////            public void onClick(View view) {
-////                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-////                        .setAction("Action", null).show();
-////            }
-////        });
-//        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-//    }
+public class ListComplaints extends Fragment{
 
     private RecyclerView recyclerView;
     private RecyclerView.Adapter adapter;
     private RecyclerView.LayoutManager layoutManager;
     ProgressDialog progressDialog;
     ArrayList<ComplaintObject> items;
-    Context context = this;
+    Context context;
     Bundle b;
     String accessToken,secretKey;
     Boolean verified;
     String id,subject,description,image,latitude,longitude,city,state,pincode,created_at,updated_at,userid,status,priority,name,email;
     String URL_FOR_TRACKING = Constants.SERVER+"/complaints/pending_complaint_list";
+    public ListComplaints() {
+        // Required empty public constructor
+    }
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home_page);
-        Intent i = getIntent();
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View v = inflater.inflate(R.layout.list_complaints, container, false);
+        Intent i = getActivity().getIntent();
         b = i.getExtras();
+        context = getContext();
         accessToken = b.getString("accessToken");
         secretKey = b.getString("secretKey");
         verified = b.getBoolean("verified");
-        //phone_no_verified = b.getBoolean("phone_no_verified");
+        // phone_no_verified = b.getBoolean("phone_no_verified");
         name = b.getString("name");
         email = b.getString("email");
         items = new ArrayList<ComplaintObject>();
-        progressDialog = new ProgressDialog(this.context);
+        progressDialog = new ProgressDialog(context);
         progressDialog.setCancelable(false);
-        recyclerView = (RecyclerView) findViewById(R.id.rvComplaints);
-        layoutManager = new LinearLayoutManager(this);
+        recyclerView = (RecyclerView) v.findViewById(R.id.rvComplaints);
+        layoutManager = new LinearLayoutManager(context);
         recyclerView.setLayoutManager(layoutManager);
 
         String cancel_req_tag = "register";
@@ -93,50 +85,49 @@ public class HomePage extends AppCompatActivity {
                 Log.d("Form", "Register Response: " + response.toString());
                 JSONArray jsonarray = null;
 
-                //   Toast.makeText(getApplicationContext(),"Register Response: " + response.toString(), Toast.LENGTH_SHORT).show();
+                //     Toast.makeText(context,"Register Response: " + response.toString(), Toast.LENGTH_SHORT).show();
                 hideDialog();
 
                 try {
                     jsonarray = new JSONArray(response.toString());
-                    Toast.makeText(getApplicationContext(),
-                            "Complaints Successfully Shown!", Toast.LENGTH_LONG).show();
+                    //  Toast.makeText(context,"jsonarray ka size: " + jsonarray.length(), Toast.LENGTH_SHORT).show();
                     ComplaintObject co[] = new ComplaintObject[100];
-                    JSONObject jsonobject[] = new JSONObject[100];
                     if(jsonarray!=null) {
                         for (int i = 0; i < jsonarray.length(); i++) {
-
                             co[i] = new ComplaintObject();
-                            jsonobject[i] = jsonarray.getJSONObject(i);
-                            co[i].setId(jsonobject[i].getString("id"));
-                            co[i].setSubject(jsonobject[i].getString("subject"));
-                            co[i].setDescription(jsonobject[i].getString("description"));
-                            co[i].setImage(jsonobject[i].getString("image"));
+                            JSONObject jsonobject = jsonarray.getJSONObject(i);
+                            co[i].setId(jsonobject.getString("id"));
+                            co[i].setSubject(jsonobject.getString("subject"));
+                            co[i].setDescription(jsonobject.getString("description"));
+                            //    co[i].setImage(jsonobject.getString("image"));
 
-                            co[i].setCreated_at(jsonobject[i].getString("created_at"));
-                            co[i].setUpdated_at(jsonobject[i].getString("updated_at"));
-                            co[i].setUserid(jsonobject[i].getString("user_id"));
-                            co[i].setStatus(jsonobject[i].getString("status"));
-
+                            co[i].setCreated_at(jsonobject.getString("created_at"));
+                            co[i].setUpdated_at(jsonobject.getString("updated_at"));
+                            co[i].setUserid(jsonobject.getString("user_id"));
+                            co[i].setStatus(jsonobject.getString("status"));
+//                            co[i].setPriority("low");
                             co[i].setAccessToken(accessToken);
                             co[i].setSecretKey(secretKey);
-                            // co[i].setAddress(jsonobject[i].getString("address"));
-                            items.add(co[i]);
+                            //   co[i].setAddress(jsonobject.getString("address"));
+                            //    items.add(co[i]);
                         }
+                        for(int i = 0; i<jsonarray.length(); i++)
+                            items.add(co[i]);
                     }
-                    Log.e("Form", "items: " + items);
-                    adapter = new CardViewAdapter(items,context,name,email,verified);
-                    recyclerView.setAdapter(adapter);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+                Log.e("Form", "items: " + items);
 
+                adapter = new CardViewAdapter(items,context,name,email,verified);
+                recyclerView.setAdapter(adapter);
             }
         }, new Response.ErrorListener() {
 
             @Override
             public void onErrorResponse(VolleyError error) {
                 Log.e("Form", "Registration Error: " + error.getMessage());
-                Toast.makeText(getApplicationContext(),"Error:"+
+                Toast.makeText(context,"Error:"+
                         "Please Check your Internet Connection!", Toast.LENGTH_LONG).show();
                 hideDialog();
             }
@@ -171,10 +162,10 @@ public class HomePage extends AppCompatActivity {
             }
         };
         // Adding request to request queue
-        AppSingleton.getInstance(getApplicationContext()).addToRequestQueue(strReq, cancel_req_tag);
+        AppSingleton.getInstance(context).addToRequestQueue(strReq, cancel_req_tag);
 
 
-
+        return v;
     }
     private void showDialog() {
         if (!progressDialog.isShowing())
@@ -185,6 +176,4 @@ public class HomePage extends AppCompatActivity {
         if (progressDialog.isShowing())
             progressDialog.dismiss();
     }
-
-
 }
